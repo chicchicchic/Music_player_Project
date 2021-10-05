@@ -1,7 +1,23 @@
+// Cac buoc xay dung project:
+// 1.Render songs
+// 2. Scroll top
+// 3. Play/ pause/ seek (search 'HTMLAudio/Video DOM Reference' trên w3schools để tìm hiểu các method/property làm việc vs audio/video)
+// 4. CD rotate
+// 5. Next/ prev
+// 6. Random
+// 7. Next/ repeat when ended
+// 8. Active song
+// 9. Scroll active song into view
+// 10. play song when click
+
+
+
 const $ = document.querySelector.bind(document);
 const $$ = document.querySelectorAll.bind(document);
 
 const app = {
+    // currentIndex: 0 nhầm muốn lấy ra chỉ mục đẩu tiên để xử lý, vì phần audio chưa có bài hát nào, nhưng ngay khi app tải ra mình phải load đc bài hát đầu tiên
+    currentIndex: 0,
     songs: [
         {
             name: 'COMFY (돌아온 탕자) - COUCH WORSHIP',
@@ -94,4 +110,90 @@ const app = {
             image: './assets/img/song15.PNG'
         }
     ],
+    render: function() {
+        const htmls = this.songs.map(song => {
+            return `
+                <div class="song">
+                    <div class="thumb" style="background-image: url('${song.image}')">
+                    </div>
+                    <div class="body">
+                        <h3 class="title">${song.name}</h3>
+                        <p class="author">${song.singer}</p>
+                    </div>
+                    <div class="option">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </div>
+                </div>
+            `
+        })
+        // Join vào block html cần render
+        $('.playlist').innerHTML = htmls.join('');
+    },
+    // Tất cả định nghĩa thuộc tính cho Object sẽ đưa vào đầy
+    defineProperties: function() {
+        // search defineProperty để tìm hiểu
+        Object.defineProperty(this, 'currentSong', {
+            get: function() {
+                return this.songs[this.currentIndex];
+            }
+        })
+    },
+    // handleEvents này là xử lý tất cả sự kiện của app
+    handleEvents: function() {
+        const cd =$('.cd');
+        // biến cdWidth là width hiện tại của nó
+        const cdWidth = cd.offsetWidth;
+
+        // Lắng nghe event kéo
+        document.onscroll = function() {
+            // Kiểm tra nó lắng nghe event kéo
+            // console.log(window.scrollY);
+            // console.log(document.documentElement.scrollTop);
+
+            // Biến scrollY hoặc scrollTop như này là để sau này nếu trình duyệt nào được cái nào thì lấy cái đó, vì sau này sẽ có trình duyệt hoạt động scrollY có trình duyệt thì hoạt động scrollTop
+            const scrollTop = window.scrollY || document.documentElement.scrollTop;
+            const newCdWidth = cdWidth - scrollTop;
+
+            // console.log ra sẽ thấy nó tăng/giảm width hiện tại của cd khi ta scroll thay vì ban đầu biến scrollTop chỉ tăng/giảm theo kích thước trình duyệt 
+            // console.log(newCdWidth);
+
+            // Set Css cho width của cd khi ta scroll lên thì cd sẻ nhỏ lại, ta scroll xuống thì cd sẽ lớn dần
+            // Dùng toán tử 3 ngôi này để check xem nếu newCdWidth > 0px thì cd vẩn còn, nếu < 0 thì ẩn luôn cd vì nếu không check như vậy thì khi User kéo nhanh quá thì sẽ không bắt được đoạn scroll sẽ khiến cho cd khi bị kéo nhanh sẽ bị dấp trong quá trình thu nhỏ/phóng lớn khi scroll
+            cd.style.width = newCdWidth > 0 ? newCdWidth + 'px' : 0;
+            // Set Css cho cd mờ dần khi thu nhỏ và đậm dần khi phóng to
+            cd.style.opacity = newCdWidth / cdWidth; 
+
+        }
+    },
+    // Hàm load bài hát hiện tại
+    loadCurrentSong: function() {
+        // Biến này dùng để render tên của bài hát
+        const heading = $('header h2');
+        // Biến này để đổi url bài hát hiện tại
+        const cdThumb = $('.cd-thumb');
+        // Biến này để lấy bài hát
+        const audio = $('#audio');
+
+        heading.textContent = this.currentSong.name;
+        cdThumb.style.backgroundImage = `url('${this.currentSong.image}')`;
+        audio.src = this.currentSong.path;
+
+        // console.log ra để thấy nó selector
+        console.log(heading, cdThumb, audio);
+
+    },
+    start: function() {
+        // Định nghĩa các thuộc tính cho Object
+        this.defineProperties()
+
+        // Lắng nghe và xử lý các sự kiện (DOM events)
+        this.handleEvents()
+
+        // Load thông tin bài hát đầu tiên vào UI khi app được chạy
+        this.loadCurrentSong()
+
+        // Render playlist
+        this.render()
+    }
 }
+app.start()
