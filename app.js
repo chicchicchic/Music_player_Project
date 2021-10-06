@@ -28,6 +28,14 @@ const audio = $('#audio');
 const playBtn = $('.btn-toggle-play');
 // Biến này là tiến độ bài hát
 const progress = $('#progress');
+// Biến này là next song
+const nextBtn = $('.btn-next');
+// Biến này là prev song
+const prevBtn = $('.btn-prev');
+// Biến này là random song
+const randomBtn = $('.btn-random');
+
+
 
 
 
@@ -36,6 +44,8 @@ const app = {
     currentIndex: 0,
     // isPlaying là property của app, mặc định là chưa phát nhạc (User chưa click Play Btn)
     isPlaying: false,
+    // isRandom là property của app, mặc định là chưa dc bật nên chưa hiện màu (User chưa click random Btn)
+    isRandom: false,
     songs: [
         {
             name: 'COMFY (돌아온 탕자) - COUCH WORSHIP',
@@ -210,62 +220,98 @@ const app = {
             }else {
                 // Ngược lại thì song sẽ play
                 audio.play();           
+            }        
+        }
+
+
+        // console.log ra để nhìn phương thức của cdThumbAnimate (trong__proto__), ở đây ta dùng phương thức play, pause
+        // console.log(cdThumbAnimate);
+
+        // Khi song đc playing
+        audio.onplay = function() {
+            _this.isPlaying = true;
+            // Khi thêm class 'playing' này vào Selector biến 'player' thì khi User click vào nút play thì nó sẽ chuyển sang icon pause
+            player.classList.add('playing');
+
+            // Khi play thì cdThumbAnimate quay
+            cdThumbAnimate.play();
+        }
+
+
+        // Khi song ko đc playing (Pause)
+        audio.onpause = function() {
+            _this.isPlaying = false;
+            // Khi thêm class 'playing' này vào Selector biến 'player' thì khi User click vào nút play thì nó sẽ chuyển sang icon pause
+            player.classList.remove('playing');
+
+            // Khi ko play thì cdThumbAnimate ko quay
+            cdThumbAnimate.pause();
+        }
+
+
+        // Khi tiến độ bài hát thay đổi 
+        audio.ontimeupdate = function() {
+            // Check nếu là duration ko phải NaN thì
+            if(audio.duration) {
+                // currentTime là time hiện tại (tính giây)
+                // duration là tổng time của bài hát (tính giây)
+                // Chia tỷ lệ, tính toán và làm tròn dưới
+                const progressPercent = Math.floor(audio.currentTime / audio.duration * 100);
+                // Có thể console.log ra để xem
+                // console.log(progressPercent);
+
+                // Khi progressPercent dc chia tỷ lệ và tính toán thí value của progress cũng thay đổi (xem bên Html cách set value), lúc này thanh trược sẽ trược theo tiến độ bài hát
+                progress.value = progressPercent;
             }
+        }
 
 
-            // console.log ra để nhìn phương thức của cdThumbAnimate (trong__proto__), ở đây ta dùng phương thức play, pause
-            // console.log(cdThumbAnimate);
+        // Xử lý khi User tua bài hát
+        progress.onchange = function(e) {
+            // Công thức: Tổng số giây bài hát / 100 * giá trị User thay đổi
+            // Có thể console.log ra để xem 
+            // console.log(audio.duration / 100 * e.target.value);
 
-            // Khi song đc playing
-            audio.onplay = function() {
-                _this.isPlaying = true;
-                // Khi thêm class 'playing' này vào Selector biến 'player' thì khi User click vào nút play thì nó sẽ chuyển sang icon pause
-                player.classList.add('playing');
+            const seekTime = audio.duration / 100 * e.target.value;
+            audio.currentTime = seekTime;
+        }
 
-                // Khi play thì cdThumbAnimate quay
-                cdThumbAnimate.play();
+
+        // Khi next song
+        nextBtn.onclick = function() {
+            if(_this.isRandom) {
+                _this.playRandomSong()
+            }else {
+                _this.nextSong()
             }
+            audio.play()
+        }
 
 
-            // Khi song ko đc playing (Pause)
-            audio.onpause = function() {
-                _this.isPlaying = false;
-                // Khi thêm class 'playing' này vào Selector biến 'player' thì khi User click vào nút play thì nó sẽ chuyển sang icon pause
-                player.classList.remove('playing');
-
-                // Khi ko play thì cdThumbAnimate ko quay
-                cdThumbAnimate.pause();
+        // Khi prev song
+        prevBtn.onclick = function() {
+            if(_this.isRandom){
+                _this.playRandomSong()
+            }else {
+                _this.prevSong()
             }
+            audio.play()
+        }
 
 
-            // Khi tiến độ bài hát thay đổi 
-            audio.ontimeupdate = function() {
-                // Check nếu là duration ko phải NaN thì
-                if(audio.duration) {
-                    // currentTime là time hiện tại (tính giây)
-                    // duration là tổng time của bài hát (tính giây)
-                    // Chia tỷ lệ, tính toán và làm tròn dưới
-                    const progressPercent = Math.floor(audio.currentTime / audio.duration * 100);
-                    // Có thể console.log ra để xem
-                    // console.log(progressPercent);
+        // Khi User click random Btn, tắt/bật random Btn
+        randomBtn.onclick = function(e) {
+            // Đảo ngược lại chính nó
+            _this.isRandom = !_this.isRandom;
+            // Dùng toggle nếu boolean lả true thì sẽ add class 'active', nếu là false thì sẽ remove class 'active'
+            randomBtn.classList.toggle('active', _this.random);
+        }
 
-                    // Khi progressPercent dc chia tỷ lệ và tính toán thí value của progress cũng thay đổi (xem bên Html cách set value), lúc này thanh trược sẽ trược theo tiến độ bài hát
-                    progress.value = progressPercent;
 
-                }
-            }
-
-            
-            // Xử lý khi User tua bài hát
-            progress.onchange = function(e) {
-                // Công thức: Tổng số giây bài hát / 100 * giá trị User thay đổi
-                // Có thể console.log ra để xem 
-                // console.log(audio.duration / 100 * e.target.value);
-
-                const seekTime = audio.duration / 100 * e.target.value;
-                audio.currentTime = seekTime;
-            }
-
+        // Xử lý phát bài hát kế tiếp khi song kết thúc (audio ended)
+        audio.onended = function() {
+            // Tự nó click vào nextBtn khi song nào đó kết thúc
+            nextBtn.click()
         }
     },
     // Hàm load bài hát hiện tại
@@ -277,6 +323,43 @@ const app = {
         // console.log ra để thấy nó selector
         console.log(heading, cdThumb, audio);
 
+    },
+    // Nút chuyển bài hát kế tiếp
+    nextSong: function() {
+        // Tăng index lên 1, nghĩa là tăng lên 1 bài mỗi khi User click next Btn
+        this.currentIndex++
+        
+        // Kiểm tra nếu currentIdex hiện tại >= 15 (Vì index của songs là từ 0 -> 14) thì index quay lại bài đầu tiên có currentIndex là 0 nếu tại currentIndex = 14 mà User lại click thêm 1 lần nữa
+        if(this.currentIndex >= this.songs.length) {
+            this.currentIndex = 0;
+        }
+        // Next và tải thông tin mới
+        this.loadCurrentSong()
+    },
+    // Nút chuyển bài hát trước đó
+    prevSong: function() {
+        // Giảm index xuống 1, nghĩa là giảm xuống 1 bài mỗi khi User click prev Btn
+        this.currentIndex--
+        
+        if(this.currentIndex < 0) {
+            this.currentIndex = this.songs.length - 1;
+        }
+        // Next và tải thông tin mới
+        this.loadCurrentSong()
+    },
+    // Xữ lý nút random song
+    playRandomSong: function() {
+        let newIndex
+        do{
+            // Điều kiện lặp while khi newIndex bằng currentIndex thì sẽ thực hiện random
+            newIndex = Math.floor(Math.random() * this.songs.length);
+        }while (newIndex === this.currentIndex)
+        // Có thê console.log và qua tab console gõ 'app.playRandomSong'
+        // console.log(newIndex);
+
+        // Set currentIndex = newIndex và load current song
+        this.currentIndex = newIndex;
+        this.loadCurrentSong();
     },
     start: function() {
         // Định nghĩa các thuộc tính cho Object
